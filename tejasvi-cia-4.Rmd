@@ -1,0 +1,522 @@
+---
+title: "MLA - CIA 4"
+author: "TEJASVI B 22121006"
+date: "2023-09-18"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r include=FALSE}
+# Importing required library
+
+library(readxl)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+```{r}
+# Assigning dataset to variables
+library(readr)
+data <- read_csv("C:/Users/HP/Desktop/MLA CIA - 4.csv")
+View(data)
+```
+
+```{r}
+# Finding out missing value in the dataset
+
+sum(is.na(data))
+
+colSums(is.na(data))
+
+```
+
+```{r}
+# Removing the NULL value in the dataset
+
+data = na.omit(data)
+
+sum(is.na(data))
+```
+
+```{r}
+# Univariant analysis of every variabes
+
+ggplot(data, aes(x = Target)) +
+  geom_histogram(binwidth = 1, fill = "Orange", color = "black") +
+  labs(x = "No. of Articles")
+
+ggplot(data, aes(x = Age)) +
+  geom_histogram(binwidth = 1, fill = "Orange", color = "black") +
+  labs(x = "Age Distribution")
+
+ggplot(data, aes(x = Gender)) +
+  geom_bar() +
+  labs(title = "Gender Distribution", x = "Gender", y = "Count")
+
+ggplot(data, aes(x = Balance)) +
+  geom_histogram(fill = "Orange", color = "black") +
+  labs(x = "Balance Distribution")
+
+hist(data$Balance, xlab = "Balance",
+     col = "Orange", border = "black")
+
+
+ggplot(data, aes(x = data$Occupation)) +
+  geom_bar(fill = "Orange", color = "black") +
+  labs(title = "Occupation", x = "Occupation", y = "Count")
+
+ggplot(data, aes(x = No_OF_CR_TXNS)) +
+  geom_histogram(binwidth = 1, fill = "Orange", color = "black") +
+  labs(x = "No_OF_CR_TXNS")
+
+ggplot(data, aes(x = data$AGE_BKT)) +
+  geom_bar(fill = "Orange", color = "black") +
+  labs(title = "AGE_BKT", x = "AGE_BKT", y = "Count")
+
+ggplot(data, aes(x = Holding_Period)) +
+  geom_histogram(binwidth = 1, fill = "Orange", color = "black") +
+  labs(x = "Holding_Period")
+
+ggplot(data, aes(x = SCR)) +
+  geom_histogram(fill = "Orange", color = "black") +
+  labs(x = "SCR")
+
+
+```
+
+# ID3
+```{r}
+
+# ID3
+
+
+# Load necessary libraries
+library(rpart)
+library(rpart.plot)
+library(caret)
+
+# Split the data into training and testng sets
+set.seed(123)
+
+id3_data = data[,-1]
+
+trainIndex <- createDataPartition(id3_data$Target, p = .7, list = FALSE, times = 1)
+
+dataTrain <- id3_data[ trainIndex,]
+dataTest <- id3_data[-trainIndex,]
+
+# Fit the ID3 model (technically, rpart uses the CART algorithm, which is similar to ID3)
+id3_model <- rpart(Target ~ ., data = dataTrain, method = "class")
+
+id3_model
+# Visualize the decision tree
+rpart.plot(id3_model, extra = 106)
+
+# Predict on the test data
+predictions <- predict(id3_model, dataTest, type = "class")
+
+
+# Check the level of predictions and Target variable in dataset
+levels(predictions)
+levels(dataTest$Target)
+
+# Converting into string
+str(dataTest$Target)
+
+# Factoring the Target variable
+dataTest$Target <- as.factor(dataTest$Target)
+levels(dataTest$Target) <- c("0", "1")
+
+
+# Check the levels of prediction and Target variable
+levels(predictions) <- levels(dataTest$Target)
+
+# Evaluate the model
+confusionMatrix(predictions, dataTest$Target)
+
+# Loading required package for the ROC curve
+library(pROC)
+library(ggplot2)
+
+# Create ROC curve
+roc_curve <- roc(response = as.numeric(dataTest$Target) - 1, predictor = as.numeric(predictions) - 1)
+
+# Plot the ROC curve
+plot(roc_curve, main = "ROC Curve for ID3 (CART) Model", print.auc = TRUE)
+
+# Add a diagonal reference line (random classifier)
+abline(a = 0, b = 1, lty = 2, col = "green")
+
+# Calculate and print the AUC (Area Under the Curve)
+auc_score <- auc(roc_curve)
+cat("AUC:", auc_score, "\n")
+
+```
+
+# C 5.0
+```{r}
+
+#C5.0
+
+# Load necessary libraries
+library(C50)
+library(caret)
+
+# Split the data into training and tes�ng sets
+set.seed(123)
+c50_data = data[,-1]
+
+trainIndex <- createDataPartition(c50_data$Target, p = .7, list = FALSE,times = 1)
+
+c50_dataTrain <- c50_data[ trainIndex,]
+c50_dataTest <- c50_data[-trainIndex,]
+
+# Build the C5.0 model
+c50_data$Target <- as.factor(c50_data$Target)
+C5.0_model <- C5.0(c50_data$Target ~ ., data = c50_data)
+
+
+# Print a summary of the model
+summary(C5.0_model)
+
+# Check the level of predictions and Target variable in dataset
+levels(predictions)
+levels(c50_dataTest$Target)
+
+# Converting into string
+str(c50_dataTest$Target)
+
+# Factoring the Target variable
+c50_dataTest$Target <- as.factor(c50_dataTest$Target)
+levels(c50_dataTest$Target) <- c("0", "1")
+
+
+# Check the levels of prediction and Target variable
+levels(predictions) <- levels(c50_dataTest$Target)
+
+# Ploting C5.0 model
+plot(C5.0_model)
+
+# Predict on the test data
+predictions <- predict(C5.0_model, c50_dataTest)
+
+# Evaluate the model
+confusionMatrix(predictions, c50_dataTest$Target)
+
+
+# Ploting ROC curve
+
+library(pROC)
+library(ggplot2)
+
+# Create ROC curve
+roc_curve <- roc(response = as.numeric(c50_dataTest$Target) - 1, predictor = as.numeric(predictions) - 1)
+
+# Plot the ROC curve
+plot(roc_curve, main = "ROC Curve for C5.0 Model", print.auc = TRUE)
+
+# Add a diagonal reference line (random classifier)
+abline(a = 0, b = 1, lty = 2, col = "green")
+
+# Calculate and print the AUC (Area Under the Curve)
+auc_score <- auc(roc_curve)
+cat("AUC:", auc_score, "\n")
+
+
+
+```
+
+
+# CART
+```{r}
+# CART
+
+# Load necessary libraries
+library(rpart)
+library(rpart.plot)
+library(caret)
+
+# Split the data into training and tesing sets
+set.seed(123)
+cart_data = data[,-1]
+
+trainIndex <- createDataPartition(cart_data$Target, p = .7, list = FALSE, times = 1)
+cart_dataTrain <- cart_data[ trainIndex,]
+cart_dataTest <- cart_data[-trainIndex,]
+
+# Check the lengths of 'Age' and 'Target' in the training dataset
+length(cart_dataTrain$Age)
+length(cart_dataTrain$Target)
+
+
+
+# Build the CART model
+cart_model <- rpart(Target ~ ., data = cart_dataTrain, method = "class")
+
+
+# Print a summary of the model
+print(cart_model)
+
+# Predict on the test data
+predictions <- predict(cart_model, cart_dataTest, type = "class")
+
+
+# Plot the decision tree
+rpart.plot(cart_model, extra = 106)
+
+```
+
+# LOGESTIC REGRESSION
+```{r}
+# Logestic Regression
+
+# Load required library
+library(caret)
+
+# Split the data into training and tesing sets
+set.seed(123)
+lr_data = data[,-1]
+
+# Fitting logestic regression model
+lr_data$Target <- as.factor(lr_data$Target)
+lr_model <- glm(Target ~ ., family = "binomial", data = lr_data)
+
+summary(lr_model)
+
+# Odds Ratio
+exp(coef(lr_model))
+
+
+# Confusion martix
+predicted_probs <- predict(lr_model, type = "response")
+predicted_classes <- ifelse(predicted_probs > 0.5, 1, 0)
+
+confusionMatrix(as.factor(predicted_classes), lr_data$Target)
+
+# Creating ROC curve 
+library(ROCR)
+
+# Create a prediction object
+prediction_obj <- prediction(predicted_probs, lr_data$Target)
+
+# Create a performance object
+performance_obj <- performance(prediction_obj, "tpr", "fpr")
+
+# Plot the ROC curve
+plot(performance_obj, main = "ROC Curve for Logistic Regression Model")
+abline(h = 0, v = 1, col = "gray")
+
+
+```
+
+# NAIVE BAYES
+```{r}
+# NAIVE BAYES
+
+# Required library
+library(e1071)
+
+# Split the data into training and tesing sets
+set.seed(123)
+nb_data = data[,-1]
+
+train_indices <- sample(1:nrow(nb_data),0.7*nrow(nb_data))
+train_data <- nb_data[train_indices, ]
+test_data <- nb_data[-train_indices, ]
+
+# Fitting naive bayes model in the dataset
+nb_model <- naiveBayes(Target ~ ., data = train_data)
+
+summary(nb_model)
+
+#Predict the outcomes on the testing set:
+predictions_nb <- predict(nb_model, test_data)
+
+
+# Compare the predicted outcomes with the actual outcomes
+confusion_matrix <- table(test_data$Target,predictions_nb)
+print(confusion_matrix)
+
+
+library(pROC)
+
+
+probabilities_nb <- predict(nb_model,test_data, type = "raw")
+
+roc_obj <- roc(test_data$Target, probabilities_nb[,2], levels = c(0, 1))
+
+plot(roc_obj, main="ROC Curve for Naive BayesModel")
+
+auc(roc_obj)
+
+
+```
+
+# SVM
+```{r}
+
+# Loading required library 
+library(e1071)
+
+# Split the data into training and tesing sets
+set.seed(123)
+svm_data = data[,-1]
+
+
+train_indices <- sample(1:nrow(data),0.7*nrow(data))
+train_data <- svm_data[train_indices, ]
+test_data <- svm_data[-train_indices, ]
+
+# Fitiing SVM model in the dataset 
+svm_model <- svm(Target ~ ., data = train_data, kernel = "radial",cost = 10, scale = TRUE)
+
+# SVM Model summary
+summary(svm_model)
+
+plot(svm_model, train_data)
+
+predictions_svm <- predict(svm_model,test_data)
+confusion_matrix <- table(test_data$Target,predictions_svm)
+confusion_matrix
+
+print(confusion_matrix)
+
+
+```
+```{r}
+# Load required libraries
+library(e1071)
+library(ROCR)
+
+# Split the data into training and testing sets
+set.seed(123)
+svm_data = data[,-1]
+
+train_indices <- sample(1:nrow(data), 0.7*nrow(data))
+train_data <- svm_data[train_indices, ]
+test_data <- svm_data[-train_indices, ]
+
+# Fit SVM model to the dataset
+svm_model <- svm(Target ~ ., data = train_data, kernel = "radial", cost = 10, scale = TRUE)
+
+# Make predictions on the test set
+predictions_svm <- predict(svm_model, test_data)
+
+# Create a confusion matrix
+confusion_matrix <- table(test_data$Target, predictions_svm)
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate ROC curve
+prediction_obj <- prediction(predictions_svm, test_data$Target)
+performance_obj <- performance(prediction_obj, "tpr", "fpr")
+
+# Plot ROC curve
+plot(performance_obj, colorize = TRUE, main = "ROC Curve for SVM Model")
+abline(a = 0, b = 1, lty = 2, col = "GREEN")
+
+```
+
+# R shiny 
+```{r}
+# Load necessary libraries
+library(shiny)
+library(dplyr)
+
+# Define the UI for the Shiny app
+ui <- fluidPage(
+  titlePanel("Logistic Regression Prediction App"),
+  sidebarLayout(
+    sidebarPanel(
+      # Input widgets for the predictor variables
+      numericInput("age", "Age:", value = 30, min = 18, max = 100),
+      selectInput("gender", "Gender:", choices = c("Male", "Female", "Other")),
+      numericInput("balance", "Balance:", value = 1000, min = 0),
+      selectInput("occupation", "Occupation:", choices = c("Salaried", "Self-Employed", "Business")),
+      numericInput("no_of_cr_txns", "Number of Credit Transactions:", value = 5, min = 0),
+      numericInput("holding_period", "Holding Period (months):", value = 12, min = 0),
+      numericInput("scr", "SCR:", value = 700, min = 300, max = 900),
+      actionButton("process_button", "Process") # Add the "Process" button
+    ),
+    mainPanel(
+      # Display the prediction result
+      verbatimTextOutput("prediction_result")
+    )
+  )
+)
+
+# Define the server logic for the Shiny app
+server <- function(input, output) {
+  # Load the logistic regression coefficients
+  coefficients <- c(
+    Intercept = -3.027e+00,
+    Age = -5.248e-02,
+    GenderM = -4.467e-01,
+    GenderO = -2.680e-01,
+    Balance = -4.530e-06,
+    OccupationSAL = -6.049e-01,
+    OccupationSELF_EMP = 8.201e-01,
+    OccupationSENP = -1.401e+00,
+    No_OF_CR_TXNS = 3.051e-02,
+    AGE_BKT50 = 9.199e-01,
+    AGE_BKT2630 = -1.451e-01,
+    AGE_BKT3135 = 2.972e-01,
+    AGE_BKT3640 = 6.198e-01,
+    AGE_BKT4145 = 1.399e+00,
+    AGE_BKT4650 = 1.032e+00,
+    Holding_Period = -1.374e-01,
+    SCR = 4.187e-03
+  )
+  
+  # Define a function to calculate the log-odds
+  calculate_log_odds <- function(input_data) {
+    log_odds <- coefficients["Intercept"]
+    for (var_name in names(input_data)) {
+      log_odds <- log_odds + coefficients[var_name] * input_data[[var_name]]
+    }
+    return(log_odds)
+  }
+  
+  # Define a function to make predictions
+  make_prediction <- function(log_odds) {
+    probability <- 1 / (1 + exp(-log_odds))
+    return(ifelse(probability >= 0.5, "Yes", "No"))
+  }
+  
+  # Observe the "Process" button click and make predictions
+  observeEvent(input$process_button, {
+    input_data <- data.frame(
+      Age = input$age,
+      GenderM = as.integer(input$gender == "Male"),
+      GenderO = as.integer(input$gender == "Other"),
+      Balance = input$balance,
+      OccupationSAL = as.integer(input$occupation == "Salaried"),
+      OccupationSELF_EMP = as.integer(input$occupation == "Self-Employed"),
+      OccupationSENP = as.integer(input$occupation == "Business"),
+      No_OF_CR_TXNS = input$no_of_cr_txns,
+      AGE_BKT50 = as.integer(input$age > 50),
+      AGE_BKT2630 = as.integer(input$age >= 26 && input$age <= 30),
+      AGE_BKT3135 = as.integer(input$age >= 31 && input$age <= 35),
+      AGE_BKT3640 = as.integer(input$age >= 36 && input$age <= 40),
+      AGE_BKT4145 = as.integer(input$age >= 41 && input$age <= 45),
+      AGE_BKT4650 = as.integer(input$age >= 46 && input$age <= 50),
+      Holding_Period = input$holding_period,
+      SCR = input$scr
+    )
+    
+    log_odds <- calculate_log_odds(input_data)
+    prediction <- make_prediction(log_odds)
+    
+    output$prediction_result <- renderText({
+      paste("Predicted Outcome:", prediction)
+    })
+  })
+}
+
+# Run the Shiny app
+shinyApp(ui, server)
+
+
+```
+
